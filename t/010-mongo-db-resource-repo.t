@@ -3,14 +3,12 @@
 use strict;
 use warnings;
 
-use lib 't/lib';
-
 use Test::More;
 use Test::Fatal;
 use Test::Moose;
+use Test::Jackalope::REST::ResourceRepositoryTestSuite;
 
 use Try::Tiny;
-use ResourceRepoTest;
 
 BEGIN {
     use_ok('Jackalope');
@@ -33,7 +31,7 @@ my $coll  = $db->get_collection('resources');
 
 my $repo = Jackalope::REST::Resource::Repository::MongoDB->new( collection => $coll );
 
-ResourceRepoTest->new(
+Test::Jackalope::REST::ResourceRepositoryTestSuite->new(
     fixtures => [
         { body => { foo => 'bar'   } },
         { body => { bar => 'baz'   } },

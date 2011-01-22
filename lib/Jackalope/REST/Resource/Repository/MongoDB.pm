@@ -6,7 +6,8 @@ our $AUTHORITY = 'cpan:STEVAN';
 
 use Data::Visitor::Callback;
 use Scalar::Util;
-use boolean ();
+use boolean  ();
+use JSON::XS ();
 use MongoDB;
 BEGIN {
     $MongoDB::BSON::use_boolean  = 1;

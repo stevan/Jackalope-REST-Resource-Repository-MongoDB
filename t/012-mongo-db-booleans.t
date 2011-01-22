@@ -3,14 +3,11 @@
 use strict;
 use warnings;
 
-use lib 't/lib';
-
 use Test::More;
 use Test::Fatal;
 use Test::Moose;
 
 use Try::Tiny;
-use ResourceRepoTest;
 use Jackalope::Util qw[ true false ];
 
 BEGIN {
