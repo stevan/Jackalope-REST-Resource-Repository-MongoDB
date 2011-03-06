@@ -45,7 +45,7 @@ sub list {
         $params->{'attrs'}->{'sort_by'} = { _id => 1 }; # sort by id
     }
 
-    $self->_convert_query_params( $params->{'query'} );
+    $params->{'query'} = $self->_convert_query_params( $params->{'query'} );
 
     my $cursor = $self->collection->query(
         $params->{'query'},
@@ -175,7 +175,7 @@ sub _convert_query_params {
             }
         }
     )->visit( $query );
-    return;
+    return $query;
 }
 
 __PACKAGE__->meta->make_immutable;
