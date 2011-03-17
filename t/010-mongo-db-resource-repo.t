@@ -58,6 +58,8 @@ Test::Jackalope::REST::ResourceRepositoryTestSuite->new(
     }
 )->run_all_tests( $repo );
 
+$mongo->get_database('jackalope-test')->drop;
+
 done_testing;
 
 

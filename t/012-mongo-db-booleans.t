@@ -76,6 +76,7 @@ my $id;
     is($resources->[0]->body->{false}, true(), '... got back the right boolean');
 }
 
+$mongo->get_database('jackalope-test')->drop;
 
 done_testing;
 

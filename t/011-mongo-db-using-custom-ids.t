@@ -58,6 +58,8 @@ isa_ok(exception {
     $repo->get_resource( "<custom-id>" )
 }, 'Jackalope::REST::Error::ResourceNotFound');
 
+$mongo->get_database('jackalope-test')->drop;
+
 done_testing;
 
 
