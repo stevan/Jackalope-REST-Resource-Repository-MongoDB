@@ -147,7 +147,7 @@ sub _convert_from_booleans {
         ignore_return_values => 1,
         'boolean' => sub {
             my ($v, $obj) = @_;
-            $_ = boolean::isTrue( $obj ) ? JSON::XS::true() : JSON::XS::false();
+            $_ = $obj ? JSON::XS::true() : JSON::XS::false();
         }
 
     )->visit( $data );
