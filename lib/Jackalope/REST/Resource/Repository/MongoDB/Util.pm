@@ -5,8 +5,8 @@ use warnings;
 our $VERSION   = '0.01';
 our $AUTHORITY = 'cpan:STEVAN';
 
-use Scalar::Util qw[ blessed ];
-use Data::Rmap   qw[ rmap rmap_ref ];
+use Scalar::Util qw[ blessed refaddr ];
+use Data::Rmap   qw[ rmap rmap_scalar ];
 use boolean  ();
 use JSON::XS ();
 
@@ -23,10 +23,42 @@ Sub::Exporter::setup_exporter({
     groups  => { default => \@exports }
 });
 
+# NOTE:
+# So, ... I kind of do something evil down
+# here, Data::Rmap is a really nice module
+# and actually does the job much faster then
+# Data::Visitor::Callback was able to.
+# However it does not re-visit any nodes
+# that have already been visited, which is
+# correct except that I am trying to find
+# all the instance of boolean::{true,false}
+# and JSON::XS::{true,false} and those are
+# always going to be the same instances
+# (they are constants). So this means that
+# I have to futz with the Data::Rmap seen
+# hash and remove the note about seeing this
+# particular item so that it will get
+# visited again. Believe me, I don't like it
+# any more then you do, but it has to be
+# done.
+#
+# In theory there should be no chance of
+# infinity recursion, because we only delete
+# the refaddr for the boolean or JSON::XS
+# object and not anything else. Additionally
+# there are no circular refs coming out of
+# MongoDB (which is the intended usage of
+# this, use it for something else and perhaps
+# pay the price).
+#
+# Anyway, it works, so we leave it.
+# - SL
+
 sub convert_to_booleans {
     my ($data) = @_;
-    rmap_ref {
+    rmap_scalar {
         if ((blessed($_) || '') eq 'JSON::XS::Boolean') {
+            delete $_[0]->seen->{ refaddr( $_ ) } if refaddr( $_ );
             $_ = $_ == JSON::XS::true ? boolean::true() : boolean::false();
         }
     } $data;
@@ -35,12 +67,13 @@ sub convert_to_booleans {
 
 sub convert_from_booleans {
     my ($data) = @_;
-    rmap_ref {
+    rmap_scalar {
         if ((blessed($_) || '') eq 'boolean') {
+            delete $_[0]->seen->{ refaddr( $_ ) } if refaddr( $_ );
             $_ = $_ ? JSON::XS::true() : JSON::XS::false();
         }
     } $data;
-    $data;
+    return $data;
 }
 
 sub convert_query_params {
