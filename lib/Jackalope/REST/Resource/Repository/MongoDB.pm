@@ -4,10 +4,7 @@ use Moose;
 our $VERSION   = '0.01';
 our $AUTHORITY = 'cpan:STEVAN';
 
-use Data::Visitor::Callback;
-use Scalar::Util;
-use boolean  ();
-use JSON::XS ();
+use Jackalope::REST::Resource::Repository::MongoDB::Util;
 use MongoDB;
 BEGIN {
     $MongoDB::BSON::use_boolean  = 1;
@@ -45,7 +42,7 @@ sub list {
         $params->{'attrs'}->{'sort_by'} = { _id => 1 }; # sort by id
     }
 
-    $params->{'query'} = $self->_convert_query_params( $params->{'query'} );
+    $params->{'query'} = convert_query_params( $params->{'query'} );
 
     my $cursor = $self->collection->query(
         $params->{'query'},
@@ -55,12 +52,11 @@ sub list {
     return [
         map {
             my $data = $_;
-            $self->_convert_from_booleans( $data );
             [
                 ( $self->use_custom_ids
                     ? $_->{_id}
                     : $_->{_id}->value ),
-                $data
+                convert_from_booleans( $data )
             ]
         } $cursor->all
     ]
@@ -69,16 +65,14 @@ sub list {
 sub create {
     my ($self, $data) = @_;
 
-    $self->_convert_to_booleans( $data );
+    convert_to_booleans( $data );
 
     my $id = $self->collection->insert( $data, { safe => 1 } );
     $data  = $self->collection->find_one( { _id => $id } );
 
-    $self->_convert_from_booleans( $data );
-
     return (
         ( $self->use_custom_ids ? $id : $id->value ),
-        $data
+        convert_from_booleans( $data )
     );
 }
 
@@ -87,26 +81,23 @@ sub get {
     my $data = $self->collection->find_one(
         { _id => $self->_create_id( $id ) }
     );
-    $self->_convert_from_booleans( $data );
-    $data;
+    convert_from_booleans( $data );
 }
 
 sub update {
     my ($self, $id, $updated_data) = @_;
 
-    $self->_convert_to_booleans( $updated_data );
-
     $id = $self->_create_id( $id );
 
     $self->collection->update(
         { _id => $id },
-        $updated_data,
+        convert_to_booleans( $updated_data ),
         { safe => 1 }
     );
 
     $updated_data = $self->collection->find_one( { _id => $id } );
 
-    $self->_convert_from_booleans( $updated_data );
+    convert_from_booleans( $updated_data );
 
     return $updated_data;
 }
@@ -126,56 +117,6 @@ sub delete {
 sub _create_id {
     my ($self, $id) = @_;
     $self->use_custom_ids ? $id : MongoDB::OID->new(value => $id)
-}
-
-sub _convert_to_booleans {
-    my ($self, $data) = @_;
-    Data::Visitor::Callback->new(
-        ignore_return_values => 1,
-        'JSON::XS::Boolean'  => sub {
-            my ($v, $obj) = @_;
-            $_ = $obj == JSON::XS::true ? boolean::true() : boolean::false();
-        }
-
-    )->visit( $data );
-    return;
-}
-
-sub _convert_from_booleans {
-    my ($self, $data) = @_;
-    Data::Visitor::Callback->new(
-        ignore_return_values => 1,
-        'boolean' => sub {
-            my ($v, $obj) = @_;
-            $_ = $obj ? JSON::XS::true() : JSON::XS::false();
-        }
-
-    )->visit( $data );
-    return;
-}
-
-sub _convert_query_params {
-    my ($self, $query) = @_;
-    Data::Visitor::Callback->new(
-        ignore_return_values => 1,
-        'value' => sub {
-            my ( undef, $val ) = @_;
-            if ( $val eq 'true' ) {
-                $_ = boolean::true();
-            }
-            elsif ( $val eq 'false' ) {
-                $_ = boolean::false();
-            }
-            elsif ( Scalar::Util::looks_like_number( $val ) ) {
-                $_ = $val + 0;
-            }
-            elsif ( $val =~ /^\/(.*)\/$/ ) {
-                my $regexp = $1;
-                $_ = qr/$regexp/;
-            }
-        }
-    )->visit( $query );
-    return $query;
 }
 
 __PACKAGE__->meta->make_immutable;
