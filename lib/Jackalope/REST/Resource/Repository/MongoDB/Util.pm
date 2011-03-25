@@ -79,6 +79,7 @@ sub convert_from_booleans {
 sub convert_query_params {
     my ($query) = @_;
     rmap {
+        return unless defined $_;
         if ( $_ eq 'true' ) {
             $_ = boolean::true();
         }
