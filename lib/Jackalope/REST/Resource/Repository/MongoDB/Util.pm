@@ -93,6 +93,10 @@ sub convert_query_params {
             my $regexp = $1;
             $_ = qr/$regexp/;
         }
+        elsif ( $_ =~ /^\/(.*)\/i$/ ) {
+            my $regexp = $1;
+            $_ = qr/$regexp/i;
+        }
     } $query;
     return $query;
 }
