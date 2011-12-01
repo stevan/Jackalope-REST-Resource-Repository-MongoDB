@@ -16,6 +16,7 @@ my @exports = qw/
     convert_to_booleans
     convert_from_booleans
     convert_query_params
+    convert_query_param
 /;
 
 Sub::Exporter::setup_exporter({
@@ -80,25 +81,34 @@ sub convert_query_params {
     my ($query) = @_;
     rmap {
         return unless defined $_;
-        if ( $_ eq 'true' ) {
-            $_ = boolean::true();
-        }
-        elsif ( $_ eq 'false' ) {
-            $_ = boolean::false();
-        }
-        elsif ( Scalar::Util::looks_like_number( $_ ) ) {
-            $_ = $_ + 0;
-        }
-        elsif ( $_ =~ /^\/(.*)\/$/ ) {
-            my $regexp = $1;
-            $_ = qr/$regexp/;
-        }
-        elsif ( $_ =~ /^\/(.*)\/i$/ ) {
-            my $regexp = $1;
-            $_ = qr/$regexp/i;
-        }
+        $_ = convert_query_param( $_ );
     } $query;
     return $query;
+}
+
+sub convert_query_param {
+    my ($value) = @_;
+    return undef unless defined $value;
+    if ( $value eq 'true' ) {
+        return boolean::true();
+    }
+    elsif ( $value eq 'false' ) {
+        return boolean::false();
+    }
+    elsif ( Scalar::Util::looks_like_number( $value ) ) {
+        return $value + 0;
+    }
+    elsif ( $value =~ /^\/(.*)\/$/ ) {
+        my $regexp = $1;
+        return qr/$regexp/;
+    }
+    elsif ( $value =~ /^\/(.*)\/i$/ ) {
+        my $regexp = $1;
+        return qr/$regexp/i;
+    }
+    else {
+        return $value;
+    }
 }
 
 1;
