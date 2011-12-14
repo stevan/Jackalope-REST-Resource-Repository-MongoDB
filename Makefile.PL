@@ -6,7 +6,7 @@ name 'Jackalope-REST-Resource-Repository-MongoDB';
 all_from 'lib/Jackalope/REST/Resource/Repository/MongoDB.pm';
 license 'perl';
 
-requires 'Jackalope'    => 0;
+# requires 'Jackalope'    => 0;
 requires 'MongoDB'      => 0;
 requires 'boolean'      => 0;
 requires 'JSON::XS'     => 0;
